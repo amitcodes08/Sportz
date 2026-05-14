@@ -10,7 +10,7 @@ matchRouter.get('/', async (req, res) => {
   const parsed = listMatchesQuerySchema.safeParse(req.query);
 
   if(!parsed.success) {
-    return res.status(400).json({ error: "Invalid query parameters" , details: JSON.stringify(parsed.error.errors)});
+    return res.status(400).json({ error: "Invalid query parameters" , details: parsed.error.errors });
   }
 
   const limit = Math.min(parsed.data.limit ?? 50, MAX_LIMIT);
@@ -26,10 +26,11 @@ matchRouter.get('/', async (req, res) => {
 matchRouter.post('/', async(req, res) => {
   const parsed = createMatchSchema.safeParse(req.body);
 
-  const {data : {startTime, endTime, homeScore, awayScore}} = parsed.success ? parsed : {data: {}};
   if (!parsed.success) {
-    return res.status(400).json({ error: "Invalid request body" , details: JSON.stringify(parsed.error.errors)});
-  }
+      return res.status(400).json({ error: "Invalid request body" , details: parsed.error.errors });
+    }
+    
+    const {data : {startTime, endTime, homeScore, awayScore}} = parsed;
 
   try {
     const [event] = await db.insert(matches).values({
@@ -40,6 +41,10 @@ matchRouter.post('/', async(req, res) => {
       awayScore: awayScore ?? 0,
       status: getMatchStatus(new Date(startTime), new Date(endTime)),
     }).returning();
+
+    if(res.app.locals.broadcastMatchCreated) {
+      res.app.locals.broadcastMatchCreated(event);
+    }
 
     res.status(201).json({ message: 'Match created successfully', data: event });
   } catch(e) {
