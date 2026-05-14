@@ -17,10 +17,12 @@
   "license": "ISC",
   "type": "module",
   "dependencies": {
+    "apminsight": "^5.4.0",
     "dotenv": "^17.4.2",
     "drizzle-kit": "^0.31.10",
     "drizzle-orm": "^0.45.2",
     "express": "^5.2.1",
-    "pg": "^8.20.0"
+    "pg": "^8.20.0",
+    "zod": "^4.4.3"
   }
 }
