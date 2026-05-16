@@ -13,7 +13,7 @@ matchRouter.get('/', async (req, res) => {
     return res.status(400).json({ error: "Invalid query parameters" , details: parsed.error.errors });
   }
 
-  const limit = Math.min(parsed.data.limit ?? 50, MAX_LIMIT);
+  const limit = Math.min(parsed.data.limit ?? 50, 100);
 
   try {
     const data = await db.select().from(matches).limit(limit).orderBy(matches.createdAt, 'desc');
