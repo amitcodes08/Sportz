@@ -1,5 +1,8 @@
 import { WebSocket, WebSocketServer } from "ws";
 import { wsArcjet } from "../arcjet.js";
+import { db } from "../db/db.js";
+import { matches } from "../db/schema.js";
+import { desc } from "drizzle-orm";
 
 const matchSubscribers = new Map();
 
@@ -129,6 +132,14 @@ export function attachWebSocketServer(server) {
 
     sendJson(socket, { type: "welcome" });
 
+    try {
+      const initialMatches = await db.select().from(matches).orderBy(desc(matches.createdAt)).limit(50);
+      sendJson(socket, { type: "initial_state", data: initialMatches });
+    } catch (err) {
+      console.error("Failed to send initial matches list on connection:", err);
+    }
+
+
     socket.on("message", (data) => {
       handleMessage(socket, data);
     });
@@ -163,5 +174,9 @@ export function attachWebSocketServer(server) {
     broadcastToMatch(matchId, { type: "commentary", data: comment });
   }
 
-  return { broadcastMatchCreated, broadcastCommentary };
+  function broadcastScoreUpdate(matchId, homeScore, awayScore) {
+    broadcastToAll(wss, { type: "score_update", data: { matchId, homeScore, awayScore } });
+  }
+
+  return { broadcastMatchCreated, broadcastCommentary, broadcastScoreUpdate };
 }

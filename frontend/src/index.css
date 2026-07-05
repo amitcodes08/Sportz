@@ -1,0 +1,30 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-neoYellow: #FFD700;
+  --color-neoBlue: #bae6fd;
+  --color-neoRed: #ef4444;
+  --color-neoBg: #F9F9F9;
+  
+  --shadow-neo: 4px 4px 0px 0px rgba(0,0,0,1);
+  --shadow-neoActive: 2px 2px 0px 0px rgba(0,0,0,1);
+}
+
+body {
+  font-family: 'Outfit', sans-serif;
+  background-color: #F9F9F9;
+  color: #000000;
+  margin: 0;
+  padding: 0;
+}
+
+/* Blinking dot animation */
+@keyframes blink {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.9); }
+}
+
+.animate-blink {
+  animation: blink 1.2s infinite ease-in-out;
+}

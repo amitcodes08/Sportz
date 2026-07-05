@@ -16,6 +16,17 @@ const server = http.createServer(app);
 
 app.use(express.json());
 
+// Enable CORS
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
+  res.header("Access-Control-Allow-Methods", "GET, POST, PATCH, PUT, DELETE, OPTIONS");
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(200);
+  }
+  next();
+});
+
 app.get("/", (req, res) => {
   res.send("Hello from Express server!");
 });
@@ -25,10 +36,11 @@ app.get("/", (req, res) => {
 app.use("/matches", matchRouter);
 app.use("/matches/:id/commentary", commentaryRouter);
 
-const { broadcastMatchCreated, broadcastCommentary } =
+const { broadcastMatchCreated, broadcastCommentary, broadcastScoreUpdate } =
   attachWebSocketServer(server);
 app.locals.broadcastMatchCreated = broadcastMatchCreated;
 app.locals.broadcastCommentary = broadcastCommentary;
+app.locals.broadcastScoreUpdate = broadcastScoreUpdate;
 
 server.listen(PORT, HOST, () => {
   const baseUrl =
