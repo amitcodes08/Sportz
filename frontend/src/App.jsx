@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Camera, RefreshCw, X, Play, Bell, AlertTriangle } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:8000/ws';
+const WS_URL = import.meta.env.VITE_WS_URL || `${API_URL.replace(/^http/, 'ws')}/ws`;
 
 function App() {
   const [connectionStatus, setConnectionStatus] = useState('connecting'); // connecting, connected, disconnected
@@ -17,7 +17,6 @@ function App() {
   const socketRef = useRef(null);
   const reconnectTimeoutRef = useRef(null);
 
-  // Helper to format time as HH:MM AM/PM
   const formatTime = (dateStr) => {
     try {
       const d = new Date(dateStr);
@@ -32,7 +31,6 @@ function App() {
     }
   };
 
-  // Helper to format time with seconds as HH:MM:SS AM/PM
   const formatTimeWithSeconds = (dateStr) => {
     try {
       const d = new Date(dateStr);
@@ -48,7 +46,6 @@ function App() {
     }
   };
 
-  // Connect to WebSocket
   useEffect(() => {
     function connectWS() {
       setConnectionStatus('connecting');
@@ -71,7 +68,6 @@ function App() {
               break;
 
             case 'initial_state':
-              // Populate the matches list
               if (Array.isArray(message.data)) {
                 const initialMap = {};
                 message.data.forEach((match) => {
@@ -82,7 +78,6 @@ function App() {
               break;
 
             case 'match_created':
-              // Add new match
               if (message.data && message.data.id) {
                 setMatches((prev) => ({
                   ...prev,
@@ -94,7 +89,6 @@ function App() {
               break;
 
             case 'score_update':
-              // Update scores dynamically without remounting
               if (message.data && message.data.matchId !== undefined) {
                 const { matchId, homeScore, awayScore } = message.data;
                 setMatches((prev) => {
@@ -112,7 +106,6 @@ function App() {
               break;
 
             case 'commentary':
-              // Prepend to current feed if it belongs to selected match
               if (message.data && message.data.matchId === selectedMatchId) {
                 setCommentary((prev) => [message.data, ...prev]);
               }
@@ -137,7 +130,6 @@ function App() {
       ws.onclose = () => {
         console.log('❌ WebSocket Disconnected');
         setConnectionStatus('disconnected');
-        // Reconnect after 3 seconds
         reconnectTimeoutRef.current = setTimeout(() => {
           connectWS();
         }, 3000);
@@ -161,12 +153,9 @@ function App() {
     };
   }, [selectedMatchId]);
 
-  // Handle Match Selection (Watch Live)
   const handleWatchLive = async (matchId) => {
-    // If selecting the same match, do nothing
     if (selectedMatchId === matchId) return;
 
-    // Unsubscribe from previous match if any
     if (selectedMatchId && socketRef.current?.readyState === WebSocket.OPEN) {
       socketRef.current.send(JSON.stringify({
         type: 'unsubscribe',
@@ -174,12 +163,10 @@ function App() {
       }));
     }
 
-    // Set new selected match
     setSelectedMatchId(matchId);
     setCommentary([]);
     setLoadingCommentary(true);
 
-    // Subscribe to new match via WebSocket
     if (socketRef.current?.readyState === WebSocket.OPEN) {
       socketRef.current.send(JSON.stringify({
         type: 'subscribe',
@@ -187,7 +174,6 @@ function App() {
       }));
     }
 
-    // Fetch initial commentary from API
     try {
       const response = await fetch(`${API_URL}/matches/${matchId}/commentary?limit=50`);
       if (response.ok) {
@@ -203,7 +189,6 @@ function App() {
     }
   };
 
-  // Handle closing the active match commentary
   const handleCloseWatch = () => {
     if (selectedMatchId && socketRef.current?.readyState === WebSocket.OPEN) {
       socketRef.current.send(JSON.stringify({
@@ -215,9 +200,7 @@ function App() {
     setCommentary([]);
   };
 
-  // Convert matches dictionary to sorted list
   const matchesList = Object.values(matches).sort((a, b) => {
-    // Show live matches first, then order by createdAt desc
     if (a.status === 'live' && b.status !== 'live') return -1;
     if (a.status !== 'live' && b.status === 'live') return 1;
     return new Date(b.createdAt) - new Date(a.createdAt);
